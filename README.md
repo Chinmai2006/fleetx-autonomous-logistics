@@ -1,176 +1,315 @@
-# Decentralized Multi-Agent Coordination Platform
+# FLEETX
 
-An autonomous, resilient logistics & multi-agent coordination platform built for decentralized fleet optimization, agent negotiation, dynamic routing, and real-time infrastructure monitoring.
+### Decentralized Multi-Agent Coordination for Autonomous Logistics
 
----
+> **Connect an autonomous machine → it joins the agent network → it can autonomously coordinate with other connected machines.**
 
-## 🏗️ Architecture (Phase 1 — Foundation)
-
-Phase 1 establishes core project layout, environment management, container configuration, and infrastructure health monitoring across:
-- **Backend API**: FastAPI (Python 3.11) with async health checks.
-- **Frontend Dashboard**: React + TypeScript + Vite + Tailwind CSS live telemetry UI.
-- **Databases & Messaging**:
-  - PostgreSQL 16 (Primary relational storage)
-  - Redis 7 (Caching, pub/sub, agent lock coordination)
-  - Eclipse Mosquitto 2.0 (MQTT telemetry broker)
+[🚀 Live Demo](YOUR_URL) · [📐 Architecture](Architecture.md) · [🔐 Security](Security.md)
 
 ---
 
-## 🚀 Quick Start
+## 🚨 The Problem
 
-### 1. Using Docker Compose (Recommended)
+Modern autonomous machines are becoming increasingly capable, but they typically operate as isolated systems.
 
-Run all services (Database, Redis, MQTT Broker, Backend API, Frontend Dashboard):
+A logistics environment may contain:
 
-```bash
-docker-compose up -d --build
-```
+- 🚁 Drones
+- 🚚 Autonomous Ground Vehicles
+- 🤖 Warehouse Robots
 
-Access services:
-- **Frontend Dashboard**: `http://localhost:3000`
-- **Backend API Docs**: `http://localhost:8000/docs`
-- **Health Check Endpoint**: `http://localhost:8000/api/v1/health`
+The problem is not simply making each machine autonomous.
 
----
+The challenge is enabling **different autonomous machines to coordinate with each other**.
 
-### 2. Manual Local Development
+A centralized controller can become a bottleneck, while isolated machines cannot dynamically negotiate tasks, cooperate on missions, or recover intelligently when another machine fails.
 
-#### Backend Setup
-```bash
-cd backend
-python -m venv venv
-# On Windows:
-.\venv\Scripts\activate
-# On Linux/macOS:
-source venv/bin/activate
+### The core problem:
 
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-```
-
-#### Frontend Setup
-```bash
-cd frontend
-npm install
-npm run dev
-```
+> **How can heterogeneous autonomous machines organize themselves and coordinate logistics tasks without relying on a single centralized decision-maker?**
 
 ---
 
-## 🧪 Testing
+## 💡 Our Solution — FLEETX
 
-Run backend integration tests:
-```bash
-cd backend
-pytest
-```
+**FLEETX** is a decentralized multi-agent coordination platform that enables heterogeneous autonomous machines to operate as a cooperative fleet.
 
-Build frontend TypeScript bundle:
-```bash
-cd frontend
-npm run build
-```
+Each machine is represented as an independent software agent.
+
+Agents can:
+
+- Discover logistics tasks
+- Advertise their capabilities
+- Evaluate their suitability for tasks
+- Submit proposals
+- Negotiate assignments
+- Cooperate with other agents
+- Handle multi-stage missions
+- Detect failures
+- Find replacement agents
+- Replan and hand off tasks
+
+This transforms a collection of autonomous machines into a **coordinated autonomous fleet**.
 
 ---
 
-## Autonomous Logistics Control Tower
-
-The dashboard supports a dynamic fleet, independent managed `AgentRuntime` processes, cooperative missions, optional Agentic AI, local-coordinate routing, deterministic dispatch decisions, operational risk/health, self-healing, audit events, and live analytics. Dynamic agents publish registration, capabilities, state, and heartbeats through MQTT; they are not inserted into the registry as simulated rows.
-
-### Run on Windows PowerShell
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Set unique operator/admin tokens in `.env` before enabling agent management:
+## ⚙️ How FLEETX Works
 
 ```text
-API_OPERATOR_TOKEN=<long-random-operator-token>
-API_ADMIN_TOKEN=<different-long-random-admin-token>
-```
+              LOGISTICS TASK
+                    │
+                    ▼
+             TASK ANNOUNCEMENT
+                    │
+        ┌───────────┼───────────┐
+        ▼           ▼           ▼
+      DRONE         AGV        ROBOT
+        │           │           │
+        ▼           ▼           ▼
+     PROPOSAL     PROPOSAL    PROPOSAL
+        │           │           │
+        └───────────┼───────────┘
+                    ▼
+              NEGOTIATION
+                    │
+                    ▼
+                ASSIGNMENT
+                    │
+                    ▼
+          COOPERATIVE EXECUTION
+                    │
+                    ▼
+              MISSION COMPLETE
 
-Start the stack and run tests:
+Each agent evaluates factors such as:
 
-```powershell
-docker compose up -d --build
-docker compose ps
-Invoke-RestMethod http://localhost:8000/api/v1/health
-& ./.venv-win/Scripts/python.exe -m pytest tests/ -v
-npm --prefix frontend run build
-```
+Capability
+Battery
+Payload
+Workload
+Distance
+Cost
+Priority
+Deadline
 
-The control tower is at `http://localhost:3000`; Swagger is at `http://localhost:8000/docs`.
+The resulting proposals are validated before assignment.
 
-### Register a Real Agent
+🤖 Agentic Intelligence
 
-Agent creation requires the admin token. The agent runs as an independent process and becomes visible only after its MQTT registration is received.
+FLEETX uses a bounded agentic workflow:
 
-```powershell
-$agent = @{
-  agent_id = "ROBOT-WEST-02"
-  agent_type = "ROBOT"
-  capabilities = @("bin_picking", "barcode_scanning")
-  payload_capacity_kg = 30
-  battery_pct = 92
-  location = @{ x = 12; y = 8; z = 0 }
-  available = $true
-  operational_constraints = @{ minimum_battery_pct = 25; maximum_distance_km = 40 }
-  metadata = @{ site = "west-warehouse" }
-} | ConvertTo-Json -Depth 6
+OBSERVE
+   ↓
+PLAN
+   ↓
+VALIDATE
+   ↓
+DELEGATE
+   ↓
+OBSERVE RESULT
+   ↓
+REPLAN when required
 
-Invoke-RestMethod -Uri http://localhost:8000/api/v1/agents `
-  -Method Post -ContentType "application/json" `
-  -Headers @{ Authorization = "Bearer $env:API_ADMIN_TOKEN" } -Body $agent
-```
+The important design principle is:
 
-The same API supports listing managed processes, activation, deactivation, and archival. Operators can read fleet/task telemetry; agent process management and audit/decision history require configured bearer tokens. The frontend keeps the entered token in page memory only.
+AI proposes. Deterministic safety rules validate.
 
-### Operational APIs
+The AI layer cannot directly bypass safety constraints or directly control physical hardware.
 
-- `GET /api/v1/agents`, `POST /api/v1/agents`, and `/api/v1/agents/{id}/activate|deactivate` manage live fleet identity and process state.
-- `POST /api/v1/routes/plan` calculates a route from explicit local coordinates or a caller-supplied distance. No road graph or traffic provider is implied.
-- `POST /api/v1/routes/optimize` and `POST /api/v1/decisions/evaluate` return scored candidates and concise decision factors; final task allocation remains with decentralized MQTT negotiation.
-- `GET /api/v1/risks`, `/api/v1/agents/health`, `/api/v1/self-healing`, `/api/v1/audit`, and `/api/v1/analytics/fleet` expose current live state and bounded in-memory records.
-- `GET /api/v1/analytics/missions/{task_id}` reports timing and mission lifecycle metrics where audit timestamps exist.
+🤝 Cooperative Multi-Agent Missions
 
-### Broker Security
+FLEETX can decompose a complex logistics mission into multiple subtasks.
 
-`mosquitto.conf` allows anonymous access for local development only. Do not expose that configuration to untrusted networks. `mosquitto.tls.conf.example` and `mosquitto.acl.example` show a TLS/password/ACL starting point; provision password hashes with `mosquitto_passwd`, use per-agent identities, create least-privilege ACL entries for every agent, mount real certificates, and set `MOSQUITTO_CONFIG`, `MOSQUITTO_PASSWORD_FILE`, `MOSQUITTO_ACL_FILE`, `MOSQUITTO_CERTS_DIR`, `MQTT_BROKER_PORT`, and backend MQTT TLS settings before deployment. The examples are not a production security certification.
+Example:
 
-### Prototype Limits
+                 DELIVERY MISSION
+                       │
+          ┌────────────┼────────────┐
+          ▼            ▼            ▼
+       PICKUP       TRANSPORT     DELIVERY
+          │            │            │
+      ROBOT-01       AGV-01      DRONE-01
 
-- Registry/task state, audit events, decisions, and self-healing records are in memory and reset when their owning process restarts.
-- Coordinates are local `x/y/z` values; the Leaflet view does not geocode or represent streets. Unknown routes require an explicit distance or coordinates.
-- Route estimates use an explicitly supplied distance or local Euclidean distance and configured average speed. No real-time traffic, road-network routing, or predictive maintenance ML is integrated.
-- MQTT anonymous mode remains the local-development default; configure broker credentials, ACLs, and TLS before exposing the broker.
+Different machines can therefore contribute different capabilities to the same mission.
 
----
+🔄 Self-Healing Fleet
 
-## 📂 Repository Structure
+Autonomous fleets must also handle failures.
 
-```
-autonomous-logistics-platform/
-├── adapters/          # Hardware & external interface adapters (stubs)
-├── agents/            # Autonomous agent logic & state machines (stubs)
-├── algorithms/        # Pathfinding & task negotiation algorithms (stubs)
-├── backend/           # FastAPI backend service
-│   ├── app/
-│   │   ├── api/       # API routers & endpoints
-│   │   ├── core/      # Application settings & configuration
-│   │   └── main.py    # Application entry point
-│   ├── Dockerfile
-│   └── requirements.txt
-├── docs/              # Architectural documentation
-├── frontend/          # Vite + React + TypeScript + Tailwind CSS UI
-│   ├── src/
-│   │   ├── components/# Health dashboard & UI widgets
-│   │   ├── App.tsx
-│   │   └── main.tsx
-│   └── Dockerfile
-├── protocols/         # P2P and MQTT message schemas (stubs)
-├── tests/             # Backend & integration test suite
-├── docker-compose.yml # Container orchestration
-├── mosquitto.conf     # MQTT configuration
-└── README.md
-```
+If an assigned machine becomes unavailable:
+
+FAILURE DETECTED
+       ↓
+RISK ASSESSMENT
+       ↓
+REPLAN
+       ↓
+FIND REPLACEMENT
+       ↓
+NEGOTIATION
+       ↓
+HANDOFF
+       ↓
+MISSION RESUMED
+
+This allows the fleet to adapt instead of requiring the entire mission to be manually restarted.
+
+🏗️ Architecture
+                         OPERATOR
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │   FLEETX UI     │
+                    │ Control Tower   │
+                    └────────┬────────┘
+                             │
+                       REST / WebSocket
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │ FLEETX BACKEND  │
+                    │ Registry        │
+                    │ Tasks           │
+                    │ Events          │
+                    │ Orchestration   │
+                    └────────┬────────┘
+                             │
+                         MQTT NETWORK
+                             │
+              ┌──────────────┼──────────────┐
+              ▼              ▼              ▼
+           DRONE            AGV           ROBOT
+           AGENT           AGENT          AGENT
+              │              │              │
+              └──────────────┼──────────────┘
+                             │
+                      Agentic Intelligence
+                             │
+                      Safety Validation
+                             │
+                       Hardware Adapter
+🔗 Communication
+
+FLEETX uses different communication mechanisms for different responsibilities:
+
+Layer	Technology	Purpose
+Agent Network	MQTT	Agent-to-agent communication
+Platform API	REST	Tasks, agents and system operations
+Real-time UI	WebSocket	Live dashboard updates
+Infrastructure	Docker	Service deployment
+Database	PostgreSQL	Platform data infrastructure
+Cache / Infrastructure	Redis	Runtime infrastructure
+
+MQTT acts as the communication layer — not as the decision-maker.
+
+🖥️ Control Tower
+
+The FLEETX dashboard provides:
+
+Fleet monitoring
+Mission management
+Live geographic map
+Decision intelligence
+Negotiation visibility
+Self-healing monitoring
+Analytics
+Audit trail
+System monitoring
+
+The objective is to make autonomous decisions observable and explainable to the operator.
+
+🚀 Why FLEETX?
+
+Traditional approach:
+
+Machine A ──┐
+Machine B ──┼── Central Controller
+Machine C ──┘
+
+FLEETX approach:
+
+        ┌─────────┐
+        │  DRONE  │
+        └────┬────┘
+             │
+      ┌──────┴──────┐
+      │ FLEETX      │
+      │ AGENT       │
+      │ NETWORK     │
+      └──────┬──────┘
+             │
+       ┌─────┴─────┐
+       ▼           ▼
+     AGV         ROBOT
+
+The focus shifts from controlling individual machines to coordinating a collective fleet.
+
+🛠️ Technology Stack
+React
+TypeScript
+Vite
+Tailwind CSS
+Leaflet
+FastAPI
+Python
+MQTT / Mosquitto
+PostgreSQL
+Redis
+Docker
+Agentic AI
+Rule-based planning
+Optional LLM planning
+📊 Prototype Capabilities
+
+FLEETX currently demonstrates:
+
+Multi-agent registration
+Agent heartbeats
+Capability advertisement
+Decentralized proposals
+Negotiation
+Task allocation
+Cooperative task decomposition
+Multi-agent execution
+Agentic planning
+Failure detection
+Replanning
+Replacement discovery
+Task handoff
+Mission recovery
+Real-time dashboard
+Geographic visualization
+Audit trail
+🔮 Future Scope
+
+The architecture can be extended toward:
+
+Physical drone integration
+ROS2 integration
+MAVLink integration
+CAN-based vehicle integration
+Large-scale fleet deployment
+Persistent distributed agent state
+Advanced optimization
+Multi-site logistics
+Edge deployment
+Fleet simulation
+Digital twins
+📚 Documentation
+Product Requirements
+Agent Architecture
+System Architecture
+Design System
+Security
+Code Style
+Testing
+👥 Project
+
+FLEETX — Decentralized Multi-Agent Coordination for Autonomous Logistics
+
+Built as a prototype for autonomous mobility and intelligent logistics coordination.
+
+
+**This is the direction I'd take.** The README becomes something a judge/recruiter can open and understand in **60–90 seconds**, rather than having to install Python, Docker, MQTT, etc. first.
+
+And once you deploy the actual FLEETX control tower, we put the real URL into that **🚀 Live Demo** button.
