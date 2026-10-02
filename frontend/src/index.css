@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: #080d14;
+  color: #f8fafc;
+  min-height: 100vh;
+}
+
+code, kbd, samp, pre {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  background: #0d141d;
+  border: 1px solid #1e2937;
+}
+
+.glass-card {
+  background: #0d141d;
+  border: 1px solid #1e2937;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.glass-card:hover {
+  background: #111b26;
+  border-color: #294052;
+}

@@ -1,0 +1,20 @@
+# Replace the coordinator and agent usernames with provisioned identities.
+user logistics-api
+topic readwrite logistics/#
+
+# Example per-agent identity. Use the actual MQTT username in each stanza.
+user AGENT-ROBOT-01
+topic read logistics/broadcast/#
+topic read logistics/agents/+/register
+topic read logistics/agents/+/capabilities
+topic read logistics/agents/+/proposals/#
+topic read logistics/agents/+/negotiation/responses/#
+topic read logistics/agents/AGENT-ROBOT-01/#
+topic write logistics/agents/AGENT-ROBOT-01/register
+topic write logistics/agents/AGENT-ROBOT-01/capabilities
+topic write logistics/agents/AGENT-ROBOT-01/heartbeat
+topic write logistics/agents/AGENT-ROBOT-01/events
+topic write logistics/agents/AGENT-ROBOT-01/responses
+topic write logistics/agents/AGENT-ROBOT-01/proposals/#
+topic write logistics/agents/AGENT-ROBOT-01/negotiation/responses/#
+topic write logistics/agents/AGENT-ROBOT-01/handoff/#

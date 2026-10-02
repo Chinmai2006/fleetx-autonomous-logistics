@@ -1,0 +1,1 @@
+Place provisioned CA and optional client certificate/key files here when enabling the Mosquitto TLS example. Never commit private keys.

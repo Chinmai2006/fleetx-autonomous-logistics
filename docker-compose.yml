@@ -1,0 +1,95 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: logistics_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-logistics_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-logistics_password}
+      POSTGRES_DB: ${POSTGRES_DB:-logistics_db}
+    ports:
+      - "${POSTGRES_PUBLISHED_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-logistics_user} -d ${POSTGRES_DB:-logistics_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: logistics_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mqtt:
+    image: eclipse-mosquitto:2.0
+    container_name: logistics_mqtt
+    restart: always
+    ports:
+      - "${MQTT_BROKER_PORT:-1883}:${MQTT_BROKER_PORT:-1883}"
+      - "9001:9001"
+    volumes:
+      - ${MOSQUITTO_CONFIG:-./mosquitto.conf}:/mosquitto/config/mosquitto.conf
+      - ${MOSQUITTO_PASSWORD_FILE:-./mosquitto.passwords.example}:/mosquitto/config/passwords:ro
+      - ${MOSQUITTO_ACL_FILE:-./mosquitto.acl.example}:/mosquitto/config/acl:ro
+      - ${MOSQUITTO_CERTS_DIR:-./certs}:/mosquitto/certs:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_pub -h localhost -p ${MQTT_BROKER_PORT:-1883} -t logistics/healthcheck -m ok -q 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: logistics_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-logistics_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-logistics_password}
+      POSTGRES_DB: ${POSTGRES_DB:-logistics_db}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      REDIS_URL: redis://redis:6379/0
+      MQTT_BROKER_HOST: mqtt
+      MQTT_BROKER_PORT: ${MQTT_BROKER_PORT:-1883}
+      MQTT_USERNAME: ${MQTT_USERNAME:-}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:-}
+      MQTT_TLS_CA_CERT: ${MQTT_TLS_CA_CERT:-}
+      MQTT_TLS_CERTFILE: ${MQTT_TLS_CERTFILE:-}
+      MQTT_TLS_KEYFILE: ${MQTT_TLS_KEYFILE:-}
+      API_ADMIN_TOKEN: ${API_ADMIN_TOKEN:-}
+      API_OPERATOR_TOKEN: ${API_OPERATOR_TOKEN:-}
+      DYNAMIC_AGENT_PROCESS_LIMIT: ${DYNAMIC_AGENT_PROCESS_LIMIT:-200}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mqtt:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: logistics_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
